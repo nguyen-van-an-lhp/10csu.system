@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Playfair Display", "Merriweather", Georgia, serif;
+
+  --color-primary-50:  #fdf2f4;
+  --color-primary-100: #fce7ea;
+  --color-primary-200: #f9d0d8;
+  --color-primary-800: #881337;
+  --color-primary-900: #6b0f2a;
+  
+  --color-ink-50:  #fbfaf8;
+  --color-ink-100: #f5f3ef;
+  --color-ink-200: #e7e5e0;
+  --color-ink-700: #44403c;
+  --color-ink-900: #1c1917;
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-2xl;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-red-900 text-amber-50 text-sm font-bold shadow-lg shadow-red-900/20 hover:bg-red-800 transition;
+  }
+  /* Class "field" được dùng ở Announcements/Timeline/Reports nhưng chưa từng
+     được định nghĩa — input/textarea render không viền, không bo góc. Vá tại
+     đây, không đụng logic file nào khác. */
+  .field {
+    @apply w-full px-3.5 py-2.5 bg-white border border-stone-200 rounded-xl text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-red-900 focus:ring-2 focus:ring-red-900/10 transition;
+  }
+}
+
+html { scroll-behavior: smooth; background-color: #fbfaf8; }
