@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
 @theme {
+  /* Đồng bộ hoàn toàn với dự án Kho học liệu 10CSU: font sans đậm cho mọi
+     tiêu đề (không còn serif trang trọng), bảng màu primary xanh dương
+     đúng y hệt (50/100/500/600/700) — 10CSU Management và Kho học liệu
+     giờ dùng chung một ngôn ngữ thị giác. */
   --font-sans: "Inter", system-ui, sans-serif;
-  --font-serif: "Playfair Display", "Merriweather", Georgia, serif;
+  --font-serif: "Inter", system-ui, sans-serif; /* alias — không còn dùng serif riêng, giữ biến để không phá các chỗ còn tham chiếu font-serif trong lúc chuyển đổi */
 
-  --color-primary-50:  #fdf2f4;
-  --color-primary-100: #fce7ea;
-  --color-primary-200: #f9d0d8;
-  --color-primary-800: #881337;
-  --color-primary-900: #6b0f2a;
-  
-  --color-ink-50:  #fbfaf8;
-  --color-ink-100: #f5f3ef;
-  --color-ink-200: #e7e5e0;
-  --color-ink-700: #44403c;
-  --color-ink-900: #1c1917;
+  --color-primary-50:  #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
 }
 
 @layer utilities {
@@ -22,14 +23,114 @@
     @apply bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-2xl;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-red-900 text-amber-50 text-sm font-bold shadow-lg shadow-red-900/20 hover:bg-red-800 transition;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary-600 text-white text-sm font-bold shadow-md shadow-primary-900/20 hover:bg-primary-700 hover:shadow-lg hover:shadow-primary-900/25 active:scale-[0.98] transition-all;
+  }
+  /* btn-secondary — dùng ở SeatingChart modal (nút Hủy bỏ) và các chỗ cần
+     nút phụ không nổi bật, chưa được định nghĩa từ trước. */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-bold hover:bg-gray-200 transition;
   }
   /* Class "field" được dùng ở Announcements/Timeline/Reports nhưng chưa từng
      được định nghĩa — input/textarea render không viền, không bo góc. Vá tại
-     đây, không đụng logic file nào khác. */
+     đây, không đụng logic file nào khác. Ring focus tham chiếu kỹ thuật của
+     ô tìm kiếm HeroSection (kho học liệu): ring-4 màu primary rất nhạt. */
   .field {
-    @apply w-full px-3.5 py-2.5 bg-white border border-stone-200 rounded-xl text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-red-900 focus:ring-2 focus:ring-red-900/10 transition;
+    @apply w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all focus:border-primary-600 focus:ring-4 focus:ring-primary-100;
+  }
+
+  /* Nhãn tròn nhỏ dùng cho RoleBadge (ui.tsx — hiển thị vai trò GVCN/Lớp
+     trưởng/Tổ trưởng khắp hệ thống) và các nhãn trạng thái ngắn khác. Cũng
+     chưa từng được định nghĩa — trước đây render không viền, không bo góc,
+     cỡ chữ mặc định quá to so với ngữ cảnh nhãn nhỏ. */
+  .chip {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border;
+  }
+
+  /* Ẩn thanh cuộn ngang nhưng vẫn cuộn được bằng chuột/vuốt — dùng cho thanh
+     điều hướng nhiều mục (Navigation.tsx) và các dải chip cuộn ngang khác.
+     Trước đây class này được gọi ở nhiều nơi nhưng CHƯA TỪNG được định
+     nghĩa, nên thanh cuộn mặc định thô của trình duyệt vẫn hiện ra giữa
+     giao diện — một phần nguyên nhân khiến layout trông vỡ/xấu. */
+  .no-scrollbar {
+    scrollbar-width: none;      /* Firefox */
+    -ms-overflow-style: none;   /* IE/Edge cũ */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;              /* Chrome/Safari/Edge Chromium */
+  }
+
+  /* Thanh cuộn mảnh, tinh tế cho các khung cuộn dọc nội bộ (Mentor bình
+     luận, ConductReport modal...) — thay cho thanh cuộn mặc định thô của
+     trình duyệt. Cũng chưa từng được định nghĩa trước đây. */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
   }
 }
 
-html { scroll-behavior: smooth; background-color: #fbfaf8; }
+/* Hiệu ứng vào — dùng khắp hệ thống (Modal popup, chuyển tab Rules, mở bài
+   đăng Mentor, cảnh báo SeatingChart) qua các class animate-in/fade-in/
+   zoom-in/duration-200. Trước đây các class này được gọi trực tiếp trong
+   JSX nhưng KHÔNG package nào (tailwindcss-animate) và KHÔNG @layer nào
+   định nghĩa chúng — Tailwind lặng lẽ bỏ qua, nên mọi popup/chuyển tab
+   "bật" ra ngay lập tức, cứng và giật thay vì mượt mà như code có vẻ định
+   làm. Định nghĩa trực tiếp bằng keyframes thuần CSS, không cần thêm
+   dependency mới.
+   duration-200 (200ms) đã có sẵn trong Tailwind lõi — chỉ animate-in,
+   fade-in, zoom-in là thiếu, nên chỉ cần bù 3 class này. */
+@keyframes fade-in-kf {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes zoom-in-kf {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-in {
+  animation-fill-mode: both;
+}
+.animate-in.fade-in {
+  animation-name: fade-in-kf;
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}
+.animate-in.zoom-in {
+  animation-name: zoom-in-kf;
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}
+/* Khi cả 2 cùng áp dụng (fade-in zoom-in), gộp thành 1 animation duy nhất
+   để 2 animation-name không ghi đè lẫn nhau. */
+.animate-in.fade-in.zoom-in {
+  animation-name: fade-in-kf, zoom-in-kf;
+}
+
+@keyframes rise-kf {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise {
+  animation: rise-kf 220ms ease-out both;
+}
+
+/* Màu chữ mặc định toàn trang — nền thực tế do Layout.tsx quyết định
+   (bg-gray-100 + ambient glow rất nhẹ) để tránh 2 lớp cùng set background
+   chồng chéo giá trị lẫn nhau. */
+html { scroll-behavior: smooth; }
+body {
+  color: rgb(17, 24, 39);
+  min-height: 100vh;
+}

@@ -6,6 +6,7 @@ import type { AppState } from '../types';
 interface DataContextType {
   appState: AppState | null;
   isLoading: boolean;
+  error: string | null;
   refreshData: () => Promise<void>;
 }
 
@@ -15,27 +16,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const { session, logout } = useAuth();
   const [appState, setAppState] = useState<AppState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Hàm kéo toàn bộ dữ liệu từ Google Sheet (Hành động BOOTSTRAP)
   const refreshData = useCallback(async () => {
     if (!session) return;
     setIsLoading(true);
+    setError(null);
     try {
       const data = await api.call<AppState>('BOOTSTRAP');
       setAppState(data);
-    } catch (error: any) {
-      // Nếu token hết hạn, báo lỗi và ép đăng xuất
-      if (error.message.includes('Phiên không hợp lệ')) {
-        logout();
-      }
-      console.error("Lỗi tải dữ liệu:", error);
+    } catch (err: any) {
+      if (err.message?.includes('Phiên không hợp lệ')) logout();
+      setError(err.message || 'Không thể tải dữ liệu từ máy chủ.');
+      console.error('Lỗi tải dữ liệu:', err);
     } finally {
       setIsLoading(false);
     }
   }, [session, logout]);
 
   return (
-    <DataContext.Provider value={{ appState, isLoading, refreshData }}>
+    <DataContext.Provider value={{ appState, isLoading, error, refreshData }}>
       {children}
     </DataContext.Provider>
   );

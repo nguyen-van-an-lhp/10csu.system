@@ -31,7 +31,7 @@ export interface TimelineEvent {
 // và sheet ConductLog phía Code.gs. Không còn "any" tự do như bản cũ.
 export type ConductTier = 'fault' | 'downgrade' | 'critical' | 'improve';
 
-export interface ConductCatalogItem { code: string; text: string; criteria: string[]; points?: number; }
+export interface ConductCatalogItem { code: string; text: string; criteria: string[]; points?: number; threshold?: number; }
 export interface ConductCatalog {
   faults: ConductCatalogItem[];
   downgrades: ConductCatalogItem[];
@@ -66,6 +66,7 @@ export interface ConductSummary {
 
 export interface ConductData {
   catalog: ConductCatalog;
+  criteriaList: string[]; // danh sách 5 phẩm chất TT22 từ server
   logs: ConductLogEntry[];
   summary: Record<string, ConductSummary>;
 }
@@ -86,6 +87,26 @@ export interface OfficerReport {
 export interface TreasuryReport {
   id: string; weekId: string; reporterId: string; balance: number; purchases: string;
   spendProposal: string; collectProposal: string; createdAt: string;
+}
+
+// QUỸ LỚP — SỔ CÁI KẾ TOÁN KÉP (v23.0, thay thế TreasuryReport ở trên).
+export type FundTxType = 'IN' | 'OUT';
+export type FundTxStatus = 'active' | 'cancelled';
+export interface FundTransaction {
+  id: string; weekId: string; type: FundTxType; amount: number; category: string;
+  description: string; proofImages: Attachment[]; createdBy: string;
+  status: FundTxStatus; createdAt: string;
+}
+export type FundPeriodStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
+export interface FundPeriod {
+  id: string; weekId: string; openingBalance: number; totalIn: number; totalOut: number;
+  closingBalance: number; proposals: string; status: FundPeriodStatus;
+  submittedBy: string; gvcnVerdict: string; approvedBy: string; createdAt: string; updatedAt: string;
+}
+export interface FundData {
+  categories: { IN: string[]; OUT: string[] };
+  transactions: FundTransaction[];
+  periods: FundPeriod[];
 }
 
 export type ComplaintStatus = 'open' | 'resolved' | 'dismissed';
@@ -112,7 +133,7 @@ export interface ReportsData {
 
 // ĐỊNH NGHĨA MỚI (v15.0): BẢNG DẶN DÒ GVBM & THỜI KHÓA BIỂU
 export interface TkbPeriod { key: string; session: 'sang' | 'chieu'; label: string; time: string; }
-export interface TeacherNote { id: string; subject: string; content: string; deadline: string; }
+export interface TeacherNote { id: string; subject: string; content: string; deadline: string; date: string; }
 /** khóa dạng "T2-sang" | "CN-chieu" → danh sách dặn dò của buổi đó */
 export type BoardNotes = Record<string, TeacherNote[]>;
 /** một tiết trong TKB: môn + giáo viên phụ trách */
@@ -138,8 +159,10 @@ export interface AppState {
   mentor: Question[];
   timeline: TimelineEvent[]; // Loại bỏ any[]
   currentWeek: string;
+  weekAnchor?: string; // Ngày neo "Tuần 1" (yyyy-MM-dd) — hệ đánh số tuần theo trường, thay ISO week
   seating?: any;
   conduct?: ConductData; // Trước đây thiếu — nguyên nhân Conduct.tsx luôn nhận undefined
   reports?: ReportsData;
   board?: BoardData;
+  fundData?: FundData;
 }

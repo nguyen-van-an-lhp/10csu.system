@@ -86,7 +86,7 @@ export default function Timeline() {
       case 'deadline': return { icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', label: 'Hạn chót (Deadline)' };
       case 'meeting': return { icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', label: 'Họp/Sinh hoạt' };
       case 'event': return { icon: CalendarIcon, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', label: 'Sự kiện ngoại khóa' };
-      default: return { icon: CalendarIcon, color: 'text-stone-600', bg: 'bg-stone-50', border: 'border-stone-200', label: 'Khác' };
+      default: return { icon: CalendarIcon, color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', label: 'Khác' };
     }
   };
 
@@ -100,10 +100,10 @@ export default function Timeline() {
       <div className="space-y-6 max-w-5xl mx-auto">
         
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl border border-stone-200 shadow-sm">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl border border-gray-200 shadow-sm">
           <div>
-            <h1 className="text-3xl font-serif font-bold text-stone-900">Lịch trình & Sự kiện</h1>
-            <p className="text-stone-500 mt-1">Quản lý Deadline, Lịch thi và Kế hoạch hoạt động lớp 10CSU</p>
+            <h1 className="text-3xl font-sans font-bold text-gray-900">Lịch trình & Sự kiện</h1>
+            <p className="text-gray-500 mt-1">Quản lý Deadline, Lịch thi và Kế hoạch hoạt động lớp 10CSU</p>
           </div>
           {canManage && (
             <button onClick={handleOpenCreate} className="btn-primary w-full md:w-auto py-2.5 px-6 rounded-xl shadow-md hover:shadow-lg transition">
@@ -113,20 +113,20 @@ export default function Timeline() {
         </div>
 
         {/* TRỤC THỜI GIAN (VERTICAL TIMELINE) */}
-        <div className="bg-white rounded-3xl border border-stone-200 p-6 md:p-8 shadow-sm">
+        <div className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-sm">
           {Object.keys(groupedEvents).length === 0 ? (
             <div className="text-center py-16">
-              <CalendarIcon size={48} className="mx-auto text-stone-300 mb-4" />
-              <p className="text-stone-500 font-medium">Chưa có kế hoạch nào sắp tới.</p>
+              <CalendarIcon size={48} className="mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500 font-medium">Chưa có kế hoạch nào sắp tới.</p>
             </div>
           ) : (
-            <div className="relative border-l-2 border-stone-100 ml-4 md:ml-6 space-y-10">
+            <div className="relative border-l-2 border-gray-100 ml-4 md:ml-6 space-y-10">
               {Object.entries(groupedEvents).map(([date, dateEvents]) => (
                 <div key={date} className="relative pl-6 md:pl-10">
                   
                   {/* Dấu mốc Ngày */}
-                  <div className="absolute -left-[9px] top-1 w-4 h-4 bg-red-900 rounded-full border-4 border-white shadow-sm" />
-                  <h2 className="text-lg font-bold text-red-900 mb-4 capitalize">{formatDateDisplay(date)}</h2>
+                  <div className="absolute -left-[9px] top-1 w-4 h-4 bg-primary-700 rounded-full border-4 border-white shadow-sm" />
+                  <h2 className="text-lg font-bold text-primary-700 mb-4 capitalize">{formatDateDisplay(date)}</h2>
                   
                   <div className="grid grid-cols-1 gap-4">
                     {dateEvents.map(evt => {
@@ -136,44 +136,44 @@ export default function Timeline() {
                       const isCancelled = evt.status === 'cancelled';
                       
                       return (
-                        <div key={evt.id} className={`p-5 rounded-2xl border ${isDone ? 'bg-stone-50 border-stone-200 opacity-60' : isCancelled ? 'bg-red-50/50 border-red-100 opacity-50' : `bg-white ${cfg.border} shadow-sm`} transition hover:shadow-md group`}>
+                        <div key={evt.id} className={`p-5 rounded-2xl border ${isDone ? 'bg-gray-50 border-gray-200 opacity-60' : isCancelled ? 'bg-primary-50/50 border-primary-100 opacity-50' : `bg-white ${cfg.border} shadow-sm`} transition hover:shadow-md group`}>
                           
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             
                             {/* Cột trái: Icon + Giờ + Tiêu đề */}
                             <div className="flex items-start gap-4">
-                              <div className={`p-3 rounded-xl ${isDone || isCancelled ? 'bg-stone-200 text-stone-500' : cfg.bg + ' ' + cfg.color}`}>
+                              <div className={`p-3 rounded-xl ${isDone || isCancelled ? 'bg-gray-200 text-gray-500' : cfg.bg + ' ' + cfg.color}`}>
                                 <Icon size={24} />
                               </div>
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isDone || isCancelled ? 'bg-stone-200 text-stone-600' : cfg.bg + ' ' + cfg.color}`}>{cfg.label}</span>
-                                  {evt.timeSlot && <span className="flex items-center gap-1 text-xs font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded"><Clock size={12}/> {evt.timeSlot}</span>}
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isDone || isCancelled ? 'bg-gray-200 text-gray-600' : cfg.bg + ' ' + cfg.color}`}>{cfg.label}</span>
+                                  {evt.timeSlot && <span className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded"><Clock size={12}/> {evt.timeSlot}</span>}
                                 </div>
-                                <h3 className={`text-lg font-bold ${isDone || isCancelled ? 'text-stone-500 line-through' : 'text-stone-900'}`}>{evt.title}</h3>
-                                {evt.description && <p className="text-sm text-stone-600 mt-2 whitespace-pre-wrap">{evt.description}</p>}
+                                <h3 className={`text-lg font-bold ${isDone || isCancelled ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{evt.title}</h3>
+                                {evt.description && <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{evt.description}</p>}
                               </div>
                             </div>
 
                             {/* Cột phải: Thao tác (Bug 2: PM đã fix) */}
                             {canManage && (
-                              <div className="flex sm:flex-col items-end gap-2 border-t sm:border-t-0 sm:border-l border-stone-100 pt-3 sm:pt-0 sm:pl-4">
+                              <div className="flex sm:flex-col items-end gap-2 border-t sm:border-t-0 sm:border-l border-gray-100 pt-3 sm:pt-0 sm:pl-4">
                                 
                                 <div className="flex gap-1">
                                   {evt.status !== 'completed' && (
-                                    <button onClick={() => handleStatusChange(evt.id, 'completed')} disabled={isProcessing} className="p-2 text-stone-400 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition" title="Đánh dấu hoàn thành"><CheckCircle2 size={18}/></button>
+                                    <button onClick={() => handleStatusChange(evt.id, 'completed')} disabled={isProcessing} className="p-2 text-gray-400 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition" title="Đánh dấu hoàn thành"><CheckCircle2 size={18}/></button>
                                   )}
                                   {evt.status !== 'cancelled' && (
-                                    <button onClick={() => handleStatusChange(evt.id, 'cancelled')} disabled={isProcessing} className="p-2 text-stone-400 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition" title="Hủy sự kiện"><XCircle size={18}/></button>
+                                    <button onClick={() => handleStatusChange(evt.id, 'cancelled')} disabled={isProcessing} className="p-2 text-gray-400 hover:bg-rose-50 hover:text-rose-600 rounded-lg transition" title="Hủy sự kiện"><XCircle size={18}/></button>
                                   )}
                                   {evt.status !== 'pending' && (
-                                    <button onClick={() => handleStatusChange(evt.id, 'pending')} disabled={isProcessing} className="p-2 text-stone-400 hover:bg-amber-50 hover:text-amber-600 rounded-lg transition" title="Khôi phục trạng thái"><Clock size={18}/></button>
+                                    <button onClick={() => handleStatusChange(evt.id, 'pending')} disabled={isProcessing} className="p-2 text-gray-400 hover:bg-amber-50 hover:text-amber-600 rounded-lg transition" title="Khôi phục trạng thái"><Clock size={18}/></button>
                                   )}
                                 </div>
 
                                 <div className="flex gap-1">
-                                  <button onClick={() => handleOpenEdit(evt)} className="p-2 text-stone-400 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition" title="Chỉnh sửa"><Edit3 size={16}/></button>
-                                  <button onClick={() => handleDelete(evt.id)} disabled={isProcessing} className="p-2 text-stone-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition" title="Xóa bỏ"><Trash2 size={16}/></button>
+                                  <button onClick={() => handleOpenEdit(evt)} className="p-2 text-gray-400 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition" title="Chỉnh sửa"><Edit3 size={16}/></button>
+                                  <button onClick={() => handleDelete(evt.id)} disabled={isProcessing} className="p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition" title="Xóa bỏ"><Trash2 size={16}/></button>
                                 </div>
 
                               </div>
@@ -196,8 +196,8 @@ export default function Timeline() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-sm font-bold text-stone-700">Phân loại</label>
-              <select value={type} onChange={e => setType(e.target.value as TimelineType)} className="field bg-stone-50">
+              <label className="text-sm font-bold text-gray-700">Phân loại</label>
+              <select value={type} onChange={e => setType(e.target.value as TimelineType)} className="field bg-gray-50">
                 <option value="exam">Kiểm tra / Thi</option>
                 <option value="deadline">Hạn chót (Deadline)</option>
                 <option value="meeting">Họp / Sinh hoạt</option>
@@ -205,24 +205,24 @@ export default function Timeline() {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-bold text-stone-700">Ngày diễn ra</label>
-              <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="field bg-stone-50" />
+              <label className="text-sm font-bold text-gray-700">Ngày diễn ra</label>
+              <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="field bg-gray-50" />
             </div>
           </div>
           
           <div className="space-y-1">
-            <label className="text-sm font-bold text-stone-700">Khung giờ (Tùy chọn)</label>
-            <input type="text" value={timeSlot} onChange={e => setTimeSlot(e.target.value)} placeholder="VD: Tiết 3 - 4, hoặc 19:00" className="field bg-stone-50" />
+            <label className="text-sm font-bold text-gray-700">Khung giờ (Tùy chọn)</label>
+            <input type="text" value={timeSlot} onChange={e => setTimeSlot(e.target.value)} placeholder="VD: Tiết 3 - 4, hoặc 19:00" className="field bg-gray-50" />
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-bold text-stone-700">Tiêu đề Sự kiện / Công việc</label>
-            <input type="text" required value={title} onChange={e => setTitle(e.target.value)} placeholder="VD: Nộp báo cáo chuyên đề Lịch sử" className="field bg-stone-50" />
+            <label className="text-sm font-bold text-gray-700">Tiêu đề Sự kiện / Công việc</label>
+            <input type="text" required value={title} onChange={e => setTitle(e.target.value)} placeholder="VD: Nộp báo cáo chuyên đề Lịch sử" className="field bg-gray-50" />
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-bold text-stone-700">Ghi chú chi tiết</label>
-            <textarea rows={4} value={description} onChange={e => setDescription(e.target.value)} placeholder="Ghi chú thêm nội dung cần chuẩn bị..." className="field bg-stone-50"></textarea>
+            <label className="text-sm font-bold text-gray-700">Ghi chú chi tiết</label>
+            <textarea rows={4} value={description} onChange={e => setDescription(e.target.value)} placeholder="Ghi chú thêm nội dung cần chuẩn bị..." className="field bg-gray-50"></textarea>
           </div>
 
           <button type="submit" disabled={isProcessing} className="btn-primary w-full py-3 mt-4 text-base">

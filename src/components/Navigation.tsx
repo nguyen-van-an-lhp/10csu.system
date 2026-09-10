@@ -1,13 +1,38 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, LayoutDashboard, Grid3X3, ClipboardList, GraduationCap, BookOpen, Scale, Users } from 'lucide-react';
+import { LogOut, LayoutDashboard, Grid3X3, ClipboardList, GraduationCap, BookOpen, Scale, Users, BookMarked, BarChart3, Library } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function Navigation() {
   const { session, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // Theo dõi vị trí cuộn để hiện/ẩn gradient mờ 2 đầu — báo cho người dùng
+  // biết còn mục điều hướng ngoài tầm nhìn, thay vì để chữ "biến mất" đột
+  // ngột không giải thích (hành vi cũ) hoặc thanh cuộn thô lồi ra giữa nav.
+  const updateScrollShadows = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  };
+
+  useEffect(() => {
+    updateScrollShadows();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', updateScrollShadows, { passive: true });
+    window.addEventListener('resize', updateScrollShadows);
+    return () => {
+      el.removeEventListener('scroll', updateScrollShadows);
+      window.removeEventListener('resize', updateScrollShadows);
+    };
+  }, [session]);
 
   if (!session) return null;
 
@@ -17,45 +42,73 @@ export function Navigation() {
       <button
         onClick={() => navigate(path)}
         className={cn(
-          "flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl text-sm font-bold transition whitespace-nowrap",
-          isActive ? "bg-red-50 text-red-900" : "text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+          // Luôn hiện nhãn chữ ở mọi kích thước màn hình — trước đây chữ bị
+          // ẩn dưới lg (hidden lg:inline), buộc người dùng đoán nghĩa qua
+          // icon trên tablet/laptop nhỏ. Padding/kích thước nhất quán một
+          // mức duy nhất thay vì đổi theo breakpoint (px-2.5 lg:px-3.5 cũ),
+          // tránh cảm giác "nhảy" layout khi resize.
+          'flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap transition-colors flex-shrink-0',
+          isActive ? 'bg-primary-50 text-primary-700' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
         )}
       >
-        <Icon size={18} /> <span className="hidden md:inline">{label}</span>
+        <Icon size={16} className="flex-shrink-0" />
+        <span>{label}</span>
       </button>
     );
   };
 
+  const isGvcn = session.role === 'gvcn';
+
   return (
-    <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center cursor-pointer flex-shrink-0" onClick={() => navigate('/dashboard')}>
-          <span className="text-base lg:text-lg font-serif font-bold text-red-900 tracking-tight leading-none">10CSU<span className="hidden sm:inline"> MANAGEMENT SYSTEM</span></span>
-        </div>
-
-        {/* Đã gộp Tổng quan/Thông báo/Lịch trình → 1 mục "Tổng quan". Còn 6 mục,
-            sắp theo tần suất sử dụng thực tế: vào thẳng, không cần cuộn ngang. */}
-        <div className="flex items-center gap-1 flex-wrap justify-center border-x border-stone-200 px-4 lg:px-6">
-          <NavItem path="/dashboard" icon={LayoutDashboard} label="Tổng quan" />
-          <NavItem path="/reports" icon={ClipboardList} label="Báo cáo" />
-          <NavItem path="/mentor" icon={GraduationCap} label="Cố vấn" />
-          <NavItem path="/seating" icon={Grid3X3} label="Sơ đồ lớp" />
-          <NavItem path="/rules" icon={BookOpen} label="Nội quy" />
-          {session.role === 'gvcn' && (
-            <NavItem path="/conduct" icon={Scale} label="Hạnh kiểm" />
-          )}
-          {session.role === 'gvcn' && (
-            <NavItem path="/accounts" icon={Users} label="Tài khoản" />
-          )}
-        </div>
-
-        <div className="flex items-center gap-4 flex-shrink-0">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-bold text-stone-800">{session.name}</p>
-            <p className="text-[11px] font-bold text-stone-500 uppercase">{session.role}</p>
+    <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200/60 shadow-sm">
+      <div className="max-w-screen-2xl mx-auto px-3 md:px-4 h-14 flex items-center gap-2 md:gap-3">
+        {/* LOGO */}
+        <div className="flex items-center cursor-pointer flex-shrink-0 gap-2" onClick={() => navigate('/dashboard')}>
+          <div className="h-7 px-2 bg-primary-700 rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-white font-bold text-[11px] tracking-wide">10CSU</span>
           </div>
-          <button onClick={() => { logout(); navigate('/'); }} className="p-2 text-stone-400 hover:text-red-900 hover:bg-red-50 rounded-xl transition">
-            <LogOut size={20} />
+          <span className="text-sm font-sans font-bold text-primary-700 tracking-tight hidden lg:inline">
+            Management System
+          </span>
+        </div>
+
+        {/* NAV LINKS — dải cuộn ngang mượt, ẩn thanh cuộn thô của trình
+            duyệt (no-scrollbar), gradient mờ 2 đầu báo hiệu còn nội dung. */}
+        <div className="relative flex-1 min-w-0">
+          {canScrollLeft && (
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10" />
+          )}
+          <div ref={scrollRef} className="flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth">
+            <NavItem path="/dashboard"    icon={LayoutDashboard} label="Tổng quan" />
+            <NavItem path="/learning"     icon={Library}         label="Học liệu" />
+            <NavItem path="/reports"      icon={ClipboardList}   label="Báo Cáo Tuần" />
+            <NavItem path="/bcs-stats"    icon={BarChart3}       label="Tiến độ" />
+            <NavItem path="/mentor"       icon={GraduationCap}   label="Cố vấn" />
+            <NavItem path="/seating"      icon={Grid3X3}         label="Sơ đồ" />
+            <NavItem path="/rules"        icon={BookOpen}        label="Nội quy" />
+            
+            {/* Đã mở khóa cho mọi học sinh */}
+            <NavItem path="/conduct"        icon={Scale}       label="Hạnh kiểm" />
+            <NavItem path="/conduct-report" icon={BarChart3}   label="Báo cáo HK" />
+            
+            {/* Vẫn giữ nguyên khóa chỉ GVCN mới xem được */}
+            {isGvcn && <NavItem path="/accounts"       icon={Users}       label="Tài khoản" />}
+            {isGvcn && <NavItem path="/catalog"        icon={BookMarked}  label="Danh mục lỗi" />}
+          </div>
+          {canScrollRight && (
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10" />
+          )}
+        </div>
+
+        {/* USER INFO + LOGOUT */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="text-right hidden md:block">
+            <p className="text-xs font-bold text-gray-800 leading-tight">{session.name}</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">{session.role}</p>
+          </div>
+          <button onClick={() => { logout(); navigate('/'); }}
+            className="p-2 text-gray-400 hover:text-primary-700 hover:bg-primary-50 rounded-xl transition flex-shrink-0" title="Đăng xuất">
+            <LogOut size={18} />
           </button>
         </div>
       </div>
