@@ -71,10 +71,17 @@ export default function Accounts() {
   const [newPw, setNewPw] = useState('');
   const [copied, setCopied] = useState(false);
 
+  // v27.2 — bọc phòng thủ: dù api.call() trả về gì đó không phải mảng (do
+  // lỗi mạng thoáng qua, HMR dev-server giữ state cũ, hay bất kỳ nguyên
+  // nhân runtime nào khác), rows luôn được ép về mảng hợp lệ, không bao giờ
+  // để undefined lọt vào state khiến rows.filter() ở dưới sập trang.
   const load = useCallback(async () => {
     setLoading(true);
-    try { setRows(await api.call<AccountRow[]>('USERS_LIST')); }
-    catch (err: any) { showToast(err.message, 'error'); }
+    try {
+      const data = await api.call<AccountRow[]>('USERS_LIST');
+      setRows(Array.isArray(data) ? data : []);
+    }
+    catch (err: any) { showToast(err.message, 'error'); setRows([]); }
     finally { setLoading(false); }
   }, [showToast]);
 
@@ -155,7 +162,7 @@ export default function Accounts() {
     setCopied(true); setTimeout(() => setCopied(false), 1500);
   };
 
-  const filtered = rows.filter(r => r.name.toLowerCase().includes(search.toLowerCase()) || r.username.toLowerCase().includes(search.toLowerCase()));
+  const filtered = (rows || []).filter(r => r.name.toLowerCase().includes(search.toLowerCase()) || r.username.toLowerCase().includes(search.toLowerCase()));
 
   const RoleTag = ({ role }: { role: string }) => (
     // Đồng bộ với RoleBadge (ui.tsx): "Ban cán sự" dùng violet thay vì blue

@@ -8,10 +8,11 @@ import { Layout } from '../components/Layout';
 import { MagicCard, Modal, Loader } from '../components/ui';
 import { fileToBase64 } from '../lib/file';
 import { compressImage } from '../lib/image';
+import { exportTkbToWord } from '../lib/tkbExport';
 import { cn } from '../lib/utils';
 import {
   Calendar as CalendarIcon, Clock, AlertCircle, AlertTriangle, BookOpen, Users, CheckCircle2, XCircle, Plus, Edit3, Trash2,
-  Paperclip, ChevronDown, ChevronUp, Search, FileText, X, NotebookPen, LayoutDashboard, Bookmark
+  Paperclip, ChevronDown, ChevronUp, Search, FileText, X, NotebookPen, LayoutDashboard, Bookmark, Download
 } from 'lucide-react';
 import type { Post, Attachment, TimelineEvent, TimelineType, TimelineStatus, BoardNotes, BoardTkb, TkbMeta, TeacherNote } from '../types';
 
@@ -755,6 +756,7 @@ function TimetableSection() {
   const [customSubject, setCustomSubject] = useState('');
   const [teacher, setTeacher] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isExportingTkb, setIsExportingTkb] = useState(false);
 
   const [editingMeta, setEditingMeta] = useState(false);
   const [metaDraft, setMetaDraft] = useState<TkbMeta>({ semester: '', schoolYear: '', updatedDate: '', appliedDate: '' });
@@ -798,6 +800,26 @@ function TimetableSection() {
     setIsProcessing(true);
     try { await api.call('BOARD_TKB_SAVE', { tkb: next }); await refreshData(); showToast('Đã xóa tiết học.', 'success'); }
     catch (err: any) { showToast(err.message, 'error'); } finally { setIsProcessing(false); }
+  };
+
+  // Xuất Word để in — thuần phía client bằng thư viện "docx" (cùng khuôn với
+  // conductExport.ts), không cần round-trip server. Mở cho MỌI người xem
+  // trang này, không giới hạn canManage — export là hành động đọc, không
+  // phải chỉnh sửa.
+  const handleExportTkb = async () => {
+    setIsExportingTkb(true);
+    try {
+      await exportTkbToWord(tkb, {
+        semester: meta.semester,
+        schoolYear: meta.schoolYear,
+        appliedDate: meta.appliedDate,
+        printDate: new Date().toLocaleDateString('vi-VN'),
+        gvcn: 'Nguyễn Văn An',
+      }, days, periods, `ThoiKhoaBieu_10CSU_${(meta.schoolYear || '').replace(/[^a-zA-Z0-9]/g, '_')}.docx`);
+      showToast('Đã xuất file Word!', 'success');
+    } catch (err: any) {
+      showToast('Lỗi xuất Word: ' + err.message, 'error');
+    } finally { setIsExportingTkb(false); }
   };
 
   const sangPeriods = periods.filter(p => p.session === 'sang');
@@ -864,12 +886,17 @@ function TimetableSection() {
             {meta.appliedDate && <span className="ml-2 text-gray-400">· Áp dụng {meta.appliedDate}</span>}
           </p>
         </div>
-        {canManage && (
-          <div className="flex items-center gap-2">
-            <button onClick={() => { setMetaDraft(meta); setEditingMeta(true); }} className="text-[11px] font-bold text-gray-500 hover:text-primary-700 underline">Sửa thông tin</button>
-            <span className="text-[11px] font-bold text-gray-400">Bấm ô để đổi tiết</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={handleExportTkb} disabled={isExportingTkb} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-[11px] font-bold rounded-xl hover:border-primary-400 hover:text-primary-700 transition disabled:opacity-60">
+            <Download size={13} /> {isExportingTkb ? 'Đang tạo file...' : 'Xuất Word để in'}
+          </button>
+          {canManage && (
+            <>
+              <button onClick={() => { setMetaDraft(meta); setEditingMeta(true); }} className="text-[11px] font-bold text-gray-500 hover:text-primary-700 underline">Sửa thông tin</button>
+              <span className="text-[11px] font-bold text-gray-400">Bấm ô để đổi tiết</span>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-x-auto">

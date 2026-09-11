@@ -27,8 +27,7 @@ export interface TimelineEvent {
   createdBy: string;
 }
 
-// ĐỊNH NGHĨA MỚI (v13.0): SỔ HẠNH KIỂM CHUẨN HÓA — khớp với danh mục cố định
-// và sheet ConductLog phía Code.gs. Không còn "any" tự do như bản cũ.
+// ĐỊNH NGHĨA MỚI (v13.0): SỔ HẠNH KIỂM CHUẨN HÓA
 export type ConductTier = 'fault' | 'downgrade' | 'critical' | 'improve';
 
 export interface ConductCatalogItem { code: string; text: string; criteria: string[]; points?: number; threshold?: number; }
@@ -71,17 +70,23 @@ export interface ConductData {
   summary: Record<string, ConductSummary>;
 }
 
-// ĐỊNH NGHĨA MỚI (v14.0): BÁO CÁO BAN CÁN SỰ LỚP — thay thế hoàn toàn
-// WeeklyReport (điểm 0-10 tổ trưởng chấm) đã bị khai tử.
+// ĐỊNH NGHĨA MỚI (v14.0): BÁO CÁO BAN CÁN SỰ LỚP
 export type ReportCategory = 'Học Tập' | 'Phong Trào' | 'Kỷ Luật' | 'Vệ Sinh' | 'Văn Hóa & Đạo Đức';
 export type ReportScope = 'class' | 'group';
 
 export interface RoleReportRule { scope: ReportScope; categories: ReportCategory[]; }
 export type RoleReportScopeMap = Record<string, RoleReportRule>;
 
-export interface OfficerReport {
+export type ReportStatus = 'tot' | 'co_van_de';
+export type ViolationSubtype = 'nhac_nho' | 'lam_viec_rieng' | 'khong_hop_tac';
+
+export interface OfficerReportSummary {
   id: string; weekId: string; reporterId: string; reporterRole: string; scope: ReportScope;
-  groupNo: number | null; category: ReportCategory; content: string; mentionedStudents: string[]; createdAt: string;
+  groupNo: number | null; category: ReportCategory; status: ReportStatus; createdAt: string;
+}
+export interface OfficerReportDetail extends OfficerReportSummary {
+  incidentDate: string; content: string; mentionedStudents: string[];
+  period: string; day: string; subject: string; violationSubtype: ViolationSubtype | ''; reminderBy: string;
 }
 
 export interface TreasuryReport {
@@ -89,7 +94,7 @@ export interface TreasuryReport {
   spendProposal: string; collectProposal: string; createdAt: string;
 }
 
-// QUỸ LỚP — SỔ CÁI KẾ TOÁN KÉP (v23.0, thay thế TreasuryReport ở trên).
+// QUỸ LỚP — SỔ CÁI KẾ TOÁN KÉP (v23.0)
 export type FundTxType = 'IN' | 'OUT';
 export type FundTxStatus = 'active' | 'cancelled';
 export interface FundTransaction {
@@ -118,14 +123,20 @@ export interface Complaint {
 export type ConfessionVisibility = 'public' | 'gvcn';
 export interface Confession {
   id: string; time: string; visibility: ConfessionVisibility; content: string; hidden: boolean;
-  authorId?: string; // chỉ có giá trị khi visibility === 'gvcn' — 'public' luôn ẩn danh, kể cả với GVCN
-  createdAt: string;
+  authorId?: string; createdAt: string;
 }
 
+// v28.0 — payload báo cáo thêm thông tin quyền do BACKEND quyết định
+// (hocTapReportRoles / canReportHocTap), để giao diện dựng đúng quyền mà
+// không hard-code lại danh sách vai trò ở 2 nơi dễ lệch nhau.
 export interface ReportsData {
   categories: ReportCategory[];
   roleScope: RoleReportScopeMap;
-  officerReports: OfficerReport[];
+  hocTapReportRoles: string[];
+  canReportHocTap: boolean;
+  violationSubtypes: ViolationSubtype[];
+  officerReportsSummary: OfficerReportSummary[];
+  officerReportsDetail: OfficerReportDetail[]; // rỗng nếu người gọi không có trách nhiệm báo cáo
   treasuryReports: TreasuryReport[];
   complaints: Complaint[]; // rỗng nếu người gọi không phải GVCN
   confessions: Confession[];
@@ -134,11 +145,8 @@ export interface ReportsData {
 // ĐỊNH NGHĨA MỚI (v15.0): BẢNG DẶN DÒ GVBM & THỜI KHÓA BIỂU
 export interface TkbPeriod { key: string; session: 'sang' | 'chieu'; label: string; time: string; }
 export interface TeacherNote { id: string; subject: string; content: string; deadline: string; date: string; }
-/** khóa dạng "T2-sang" | "CN-chieu" → danh sách dặn dò của buổi đó */
 export type BoardNotes = Record<string, TeacherNote[]>;
-/** một tiết trong TKB: môn + giáo viên phụ trách */
 export interface TkbSlot { subject: string; teacher: string; }
-/** khóa dạng "T2-S1" → tiết học (môn + GV) */
 export type BoardTkb = Record<string, TkbSlot>;
 export interface TkbMeta { semester: string; schoolYear: string; updatedDate: string; appliedDate: string; }
 
@@ -152,17 +160,51 @@ export interface BoardData {
   canManage: boolean;
 }
 
+// ĐỊNH NGHĨA MỚI (v26.0): LỊCH TRỰC NHẬT
+export type DutyDay = 'T2' | 'T3' | 'T4' | 'T5' | 'T6' | 'T7';
+export type DutyRosterWeek = Partial<Record<DutyDay, string[]>>;
+export type DutyRosterData = Record<string, DutyRosterWeek>;
+
+// ĐỊNH NGHĨA MỚI (v25.0): TRANG PHÂN CÔNG
+export type AssignmentType = 'hoat_dong_lop' | 'hoat_dong_truong' | 'hoc_tap';
+export type AssignmentTargetType = 'individual' | 'group';
+export type AssignmentStatus = 'assigned' | 'reported' | 'evaluated' | 'decided';
+export type AssignmentRating = 'xuat_sac' | 'dat' | 'chua_dat';
+export interface AssignmentScopeRule { types: AssignmentType[]; targetScope: 'class' | 'group'; }
+export type AssignmentScopeMap = Record<string, AssignmentScopeRule>;
+export interface AssignmentComment { id: string; authorId: string; authorName: string; content: string; createdAt: string; }
+export interface Assignment {
+  id: string; type: AssignmentType; assignerId: string; assignerRole: string;
+  targetType: AssignmentTargetType; targetId: string | number; title: string; content: string;
+  deadline: string; status: AssignmentStatus; selfReportedAt: string;
+  evaluatorId: string; evaluatedAt: string; evaluationRating: AssignmentRating | ''; evaluationNote: string;
+  decidedBy: string; decidedAt: string; decisionNote: string;
+  comments: AssignmentComment[]; createdAt: string;
+}
+export interface DutySuggestion { weekId: string; suggestedGroupNo: number; }
+export interface AssignmentsData { types: AssignmentType[]; scope: AssignmentScopeMap; ratings: AssignmentRating[]; list: Assignment[]; dutySuggestion: DutySuggestion; }
+
+// ĐỊNH NGHĨA MỚI (v27.0): CÔNG NỢ QUỸ LỚP THEO ĐỢT
+export type FundDebtStatus = 'unpaid' | 'partial' | 'paid' | 'overpaid';
+export interface FundCollectionPeriod { id: string; category: string; name: string; amountPerPerson: number; deadline: string; createdBy: string; status: 'open' | 'closed'; createdAt: string; }
+export interface FundDebt { id: string; periodId: string; studentId: string; amountOwed: number; amountPaid: number; status: FundDebtStatus; note: string; }
+export interface FundDebtPayment { id: string; debtId: string; amount: number; note: string; recordedBy: string; createdAt: string; }
+export interface FundDebtData { periods: FundCollectionPeriod[]; debts: FundDebt[]; payments: FundDebtPayment[]; }
+
 export interface AppState {
   roster: User[];
   groups: ClassGroup[];
   posts: Post[];
   mentor: Question[];
-  timeline: TimelineEvent[]; // Loại bỏ any[]
+  timeline: TimelineEvent[];
   currentWeek: string;
-  weekAnchor?: string; // Ngày neo "Tuần 1" (yyyy-MM-dd) — hệ đánh số tuần theo trường, thay ISO week
+  weekAnchor?: string;
   seating?: any;
-  conduct?: ConductData; // Trước đây thiếu — nguyên nhân Conduct.tsx luôn nhận undefined
+  conduct?: ConductData;
   reports?: ReportsData;
   board?: BoardData;
   fundData?: FundData;
+  assignments?: AssignmentsData;
+  fundDebt?: FundDebtData;
+  dutyRoster?: DutyRosterData;
 }

@@ -48,6 +48,74 @@ export function parseVNDateTime(raw: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+// Tính ngày dương lịch thật (Thứ mấy → ngày/tháng nào) cho từng ngày trong
+// 1 tuần trường học, từ weekId ("YYYY-SWn") + điểm neo Tuần 1 (yyyy-MM-dd).
+const WEEKDAY_OFFSET: Record<string, number> = { T2: 0, T3: 1, T4: 2, T5: 3, T6: 4, T7: 5, CN: 6 };
+function mondayOfDate(dt: Date): Date {
+  const x = new Date(dt); x.setHours(0, 0, 0, 0);
+  const day = (x.getDay() + 6) % 7;
+  x.setDate(x.getDate() - day);
+  return x;
+}
+export function weekMonday(weekId: string, weekAnchorIso: string): Date {
+  const anchor = weekAnchorIso ? new Date(weekAnchorIso) : new Date(new Date().getFullYear(), 8, 7);
+  const anchorMonday = mondayOfDate(anchor);
+  const n = Number(weekId?.match(/SW(-?\d+)$/)?.[1] ?? 1);
+  const monday = new Date(anchorMonday);
+  monday.setDate(monday.getDate() + (n - 1) * 7);
+  return monday;
+}
+export function weekDayDate(weekId: string, weekAnchorIso: string, day: string): Date {
+  const monday = weekMonday(weekId, weekAnchorIso);
+  const d = new Date(monday);
+  d.setDate(d.getDate() + (WEEKDAY_OFFSET[day] ?? 0));
+  return d;
+}
+export function dateToWeekId(date: Date, weekAnchorIso: string): string {
+  const anchor = weekAnchorIso ? new Date(weekAnchorIso) : new Date(new Date().getFullYear(), 8, 7);
+  const anchorMonday = mondayOfDate(anchor);
+  const dMonday = mondayOfDate(date);
+  const weekNum = Math.round((dMonday.getTime() - anchorMonday.getTime()) / (7 * 86400000)) + 1;
+  return `${anchor.getFullYear()}-SW${weekNum}`;
+}
+export function formatDmShort(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+export function formatDmy(d: Date): string {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+export function formatIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// v26.2 — SẮP XẾP DANH SÁCH HỌC SINH THEO TỔ + VỊ TRÍ GHẾ THẬT. Dùng CHUNG
+// cho mọi check-list chọn học sinh trong toàn hệ thống (Trực nhật, Phân
+// công, Báo cáo tuần...), thay vì mỗi nơi tự sắp một kiểu. Sơ đồ lớp
+// (SeatingChart.tsx) lưu ghế theo khóa "hàng-cột" — hàng 0 = bàn đầu, cột 0
+// = bên trái — nên rank = hàng*100 + cột cho đúng thứ tự đọc tự nhiên
+// (trái→phải hết 1 hàng rồi mới xuống hàng dưới). Tổ nào chưa xếp/chưa có
+// ghế bị đẩy xuống cuối nhóm tương ứng, không làm vỡ thứ tự Tổ 1→8.
+export function sortRosterBySeat<T extends { id: string; name: string; group?: number | null }>(roster: T[], seating: any): T[] {
+  const seatRank = new Map<string, number>();
+  if (seating && typeof seating === 'object') {
+    Object.entries(seating).forEach(([seatId, seat]: [string, any]) => {
+      const studentId = seat?.studentId;
+      if (!studentId) return;
+      const [r, c] = seatId.split('-').map(Number);
+      if (Number.isNaN(r) || Number.isNaN(c)) return;
+      seatRank.set(String(studentId), r * 100 + c);
+    });
+  }
+  return [...roster].sort((a, b) => {
+    const ga = a.group ?? 99, gb = b.group ?? 99;
+    if (ga !== gb) return ga - gb;
+    const sa = seatRank.has(a.id) ? seatRank.get(a.id)! : Infinity;
+    const sb = seatRank.has(b.id) ? seatRank.get(b.id)! : Infinity;
+    if (sa !== sb) return sa - sb;
+    return a.name.localeCompare(b.name, 'vi');
+  });
+}
+
 // Gom một danh sách bất kỳ theo THÁNG của trường thời gian do hàm getTimeStr
 // chỉ định, nhóm mới nhất lên đầu. Dùng cho các danh sách có thể phình to
 // theo thời gian (báo cáo tuần, bài đăng lưu trữ...) để tránh render tràn
